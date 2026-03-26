@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Campo Gravítico</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #081120, #0f172a);
+      color: #e2e8f0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    .intro {
+      margin-bottom: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #e2e8f0;
+      margin-bottom: 16px;
+    }
+
+    input[type="range"] {
+      padding: 0;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .metric {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .metric h3 {
+      font-size: 15px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .metric p {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 0 0 8px 0;
+      word-break: break-word;
+    }
+
+    .metric span {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .sim-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+    }
+
+    canvas {
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 50%;
+      max-width: 100%;
+    }
+
+    .tips {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .tip {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .small {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .grid, .results, .tips {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="intro">
+      <h1><strong>Simulador de Campo Gravítico</strong></h1>
+      <p>
+        Bem-vinda Sra. Professora ao nosso website interativo que permite explorar o campo gravítico, a velocidade orbital,
+        a velocidade de escape, a energia potencial gravítica e o período orbital de planetas com base no raio e massa do planeta!
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Parâmetros</h2>
+
+        <label for="planet">Escolha um astro</label>
+        <select id="planet">
+          <option value="Terra">Terra</option>
+          <option value="Marte">Marte</option>
+          <option value="Jupiter">Júpiter</option>
+          <option value="Lua">Lua</option>
+        </select>
+
+        <label for="altitude">Altitude da órbita: <span id="altitudeValue">400</span> km</label>
+        <input type="range" id="altitude" min="100" max="50000" step="50" value="400" />
+
+        <label for="customMass">Ou insira uma massa personalizada (kg)</label>
+        <input type="number" id="customMass" placeholder="Deixa em branco para usar o astro escolhido" />
+
+        <label for="customRadius">Ou insira um raio personalizado (km)</label>
+        <input type="number" id="customRadius" placeholder="Deixa em branco para usar o astro escolhido" />
+
+        <p class="small">Se preencher massa e raio personalizados, o simulador usará esses valores.</p>
+      </div>
+
+      <div class="card sim-box">
+        <h2>Visualização</h2>
+        <canvas id="orbitCanvas" width="320" height="320"></canvas>
+        <p class="small">
+          A animação representa uma órbita circular simplificada para ilustrar a relação
+          entre distância ao centro e movimento orbital.
+        </p>
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="metric">
+        <h3>Campo gravítico</h3>
+        <p id="fieldValue">-</p>
+        <span>g = GM / r²</span>
+      </div>
+      <div class="metric">
+        <h3>Velocidade orbital</h3>
+        <p id="orbitalValue">-</p>
+        <span>v = √(GM / r)</span>
+      </div>
+      <div class="metric">
+        <h3>Velocidade de escape</h3>
+        <p id="escapeValue">-</p>
+        <span>ve = √(2GM / r)</span>
+      </div>
+      <div class="metric">
+        <h3>Energia potencial gravítica</h3>
+        <p id="energyValue">-</p>
+        <span>Ep = -GM / r</span>
+      </div>
+      <div class="metric">
+        <h3>Período orbital</h3>
+        <p id="periodValue">-</p>
+        <span>T = 2π √(r³ / GM)</span>
+      </div>
+      <div class="metric">
+        <h3>Distância ao centro</h3>
+        <p id="distanceValue">-</p>
+        <span>r = R + h</span>
+      </div>
+    </div>
+
+    <div class="tips">
+      <div class="tip">
+      <div class="tip">
+        <h3><strong>Feito Por:</strong></h3>
+        <p>Ricardo, David, César, Gabriel e</p>
+		<p>Da maravilhosa turma: 12ºA</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const G = 6.67430e-11;
+
+    const planets = {
+      Terra: { mass: 5.972e24, radius: 6.371e6, color: '#2563eb' },
+      Marte: { mass: 6.39e23, radius: 3.3895e6, color: '#b45309' },
+      Jupiter: { mass: 1.898e27, radius: 6.9911e7, color: '#d6a46d' },
+      Lua: { mass: 7.342e22, radius: 1.7374e6, color: '#94a3b8' }
+    };
+
+    const planetSelect = document.getElementById('planet');
+    const altitudeSlider = document.getElementById('altitude');
+    const altitudeValue = document.getElementById('altitudeValue');
+    const customMassInput = document.getElementById('customMass');
+    const customRadiusInput = document.getElementById('customRadius');
+
+    const fieldValue = document.getElementById('fieldValue');
+    const orbitalValue = document.getElementById('orbitalValue');
+    const escapeValue = document.getElementById('escapeValue');
+    const energyValue = document.getElementById('energyValue');
+    const periodValue = document.getElementById('periodValue');
+    const distanceValue = document.getElementById('distanceValue');
+
+    const canvas = document.getElementById('orbitCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let angle = 0;
+
+    function formatScientific(num) {
+      return num.toExponential(3).replace('e+', ' × 10^').replace('e', ' × 10^');
+    }
+
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.round(seconds % 60);
+      return `${h} h ${m} min ${s} s`;
+    }
+
+    function getCurrentData() {
+      const selected = planets[planetSelect.value];
+      const customMass = parseFloat(customMassInput.value);
+      const customRadiusKm = parseFloat(customRadiusInput.value);
+
+      const mass = !isNaN(customMass) ? customMass : selected.mass;
+      const radius = !isNaN(customRadiusKm) ? customRadiusKm * 1000 : selected.radius;
+      const color = selected.color;
+
+      return { mass, radius, color };
+    }
+
+    function updateValues() {
+      altitudeValue.textContent = altitudeSlider.value;
+
+      const { mass, radius } = getCurrentData();
+      const altitude = Number(altitudeSlider.value) * 1000;
+      const orbitalRadius = radius + altitude;
+
+      const g = (G * mass) / (orbitalRadius ** 2);
+      const vOrb = Math.sqrt((G * mass) / orbitalRadius);
+      const vEsc = Math.sqrt((2 * G * mass) / orbitalRadius);
+      const ep = -(G * mass) / orbitalRadius;
+      const period = 2 * Math.PI * Math.sqrt((orbitalRadius ** 3) / (G * mass));
+
+      fieldValue.textContent = g.toFixed(3) + ' N/kg';
+      orbitalValue.textContent = vOrb.toFixed(2) + ' m/s';
+      escapeValue.textContent = vEsc.toFixed(2) + ' m/s';
+      energyValue.textContent = formatScientific(ep) + ' J/kg';
+      periodValue.textContent = formatTime(period);
+      distanceValue.textContent = (orbitalRadius / 1000).toFixed(0) + ' km';
+    }
+
+    function drawOrbit() {
+      const { mass, radius, color } = getCurrentData();
+      const altitude = Number(altitudeSlider.value) * 1000;
+      const orbitalRadiusReal = radius + altitude;
+      const period = 2 * Math.PI * Math.sqrt((orbitalRadiusReal ** 3) / (G * mass));
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = 160;
+      const centerY = 160;
+
+      const minPlanetRadius = 26;
+      const maxPlanetRadius = 52;
+      const minOrbitRadius = 78;
+      const maxOrbitRadius = 140;
+
+      const altitudeRatio = Math.min(altitude / 50000000, 1);
+      const orbitRadius = minOrbitRadius + altitudeRatio * (maxOrbitRadius - minOrbitRadius);
+      const planetRadius = Math.max(minPlanetRadius, maxPlanetRadius - altitudeRatio * 10);
+
+      ctx.beginPath();
+      ctx.setLineDash([6, 8]);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(centerX, centerY, planetRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      const satX = centerX + orbitRadius * Math.cos(angle);
+      const satY = centerY + orbitRadius * Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(satX, satY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = '#e2e8f0';
+      ctx.arc(satX, satY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(planetSelect.value, centerX, centerY + 5);
+
+      const baseAngularSpeed = 0.08;
+      const speedFactor = Math.max(0.15, Math.min(4, 5400 / period));
+      angle += baseAngularSpeed * speedFactor;
+
+      requestAnimationFrame(drawOrbit);
+    }
+
+    planetSelect.addEventListener('change', updateValues);
+    altitudeSlider.addEventListener('input', updateValues);
+    customMassInput.addEventListener('input', updateValues);
+    customRadiusInput.addEventListener('input', updateValues);
+
+    updateValues();
+    drawOrbit();
+  </script>
+</body>
+</html>
